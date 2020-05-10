@@ -1,0 +1,35 @@
+# https://www.zerotier.com/download/
+# curl -s 'https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg' | gpg --import && \
+# if z=$(curl -s 'https://install.zerotier.com/' | gpg); then echo "$z" | sudo bash; fi
+---
+- hosts: all
+  become: True
+  tasks:
+  - name: Import zerotier package gpg
+    command:
+    args:
+      cmd: rpm --import http://download.zerotier.com/contact%40zerotier.com.gpg
+      warn: False
+  - name: Copy zerotier repo
+    copy:
+      content: |
+        [zerotier]
+        name=ZeroTier, Inc. RPM Release Repository
+        baseurl=https://download.zerotier.com/redhat/fc/22
+        enabled=1
+        gpgcheck=1
+        gpgkey=http://download.zerotier.com/contact%40zerotier.com.gpg
+      dest: /etc/yum.repos.d/zerotier.repo
+      owner: root
+      group: root
+      mode: '0664'
+  - name: Install zerotier-one
+    package:
+      name: zerotier-one
+      state: installed
+  - name: enable zerotier-one
+    service:
+      name: zerotier-one
+      state: started
+      enabled: True
+# Check /var/lib/zerotier-one/identity.public for identity.
