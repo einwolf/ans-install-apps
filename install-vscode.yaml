@@ -19,7 +19,7 @@
       dest: /etc/yum.repos.d/vscode.repo
       owner: root
       group: root
-      mode: '0666'
+      mode: '0664'
   - name: Install vscode
     package:
       name: code
