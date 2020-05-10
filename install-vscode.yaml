@@ -1,0 +1,26 @@
+---
+- hosts: all
+  become: True
+  tasks:
+  - name: Import Microsoft package gpg key
+    command:
+    args:
+      cmd: rpm --import https://packages.microsoft.com/keys/microsoft.asc
+      warn: False
+  - name: Copy vscode repo
+    copy:
+      content: |
+        [code]
+        name=Visual Studio Code
+        baseurl=https://packages.microsoft.com/yumrepos/vscode
+        enabled=1
+        gpgcheck=1
+        gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+      dest: /etc/yum.repos.d/vscode.repo
+      owner: root
+      group: root
+      mode: '0666'
+  - name: Install vscode
+    package:
+      name: code
+      state: installed

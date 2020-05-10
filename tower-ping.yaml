@@ -1,0 +1,5 @@
+---
+- hosts: all
+  tasks:
+    - name: Ping from tower
+      ping:
