@@ -1,0 +1,73 @@
+---
+- hosts: all
+  become: True
+  vars:
+    pycharm_archive_url: https://download.jetbrains.com/python/pycharm-community-2020.1.1.tar.gz
+    pycharm_checksum_url: https://download.jetbrains.com/python/pycharm-community-2020.1.1.tar.gz.sha256
+    pycharm_archive_filename: "{{ pycharm_archive_url | basename }}"
+    pycharm_checksum_filename: "{{ pycharm_checksum_url | basename }}"
+    pycharm_dirname: "{{ pycharm_archive_url | basename | regex_replace('\\.tar\\.gz') }}"
+  tasks:
+  - debug:
+      verbosity: 1
+      var: pycharm_archive_filename
+  - debug:
+      verbosity: 1
+      var: pycharm_checksum_filename
+  - debug:
+      verbosity: 1
+      var: pycharm_dirname
+  - name: Make jetbrains opt directory
+    file:
+      state: directory
+      dest: /opt/jetbrains
+      owner: root
+      group: root
+      mode: 0775
+  - name: Check pycharm community archive
+    stat:
+      path: /opt/jetbrains/{{ pycharm_archive_filename }}
+    register: pycharm_archive_stat
+  - debug:
+      verbosity: 1
+      var: pycharm_archive_stat
+  - name: Get pycharm community archive
+    get_url:
+      url: "{{ pycharm_archive_url }}"
+      dest: /opt/jetbrains/
+      owner: root
+      group: root
+      mode: 0664
+    when: not pycharm_archive_stat.stat.exists
+  - name: Check pycharm community checksum
+    stat:
+      path: /opt/jetbrains/{{ pycharm_checksum_filename }}
+    register: pycharm_checksum_stat
+  - debug:
+      verbosity: 1
+      var: pycharm_checksum_stat
+  - name: Get pycharm community archive checksum
+    get_url:
+      url: "{{ pycharm_checksum_url }}"
+      dest: /opt/jetbrains/
+      owner: root
+      group: root
+      mode: 0664
+    when: not pycharm_checksum_stat.stat.exists
+  - name: Check pycharm community archive checksum
+    command: sha256sum -c {{ pycharm_checksum_filename }}
+    args:
+      chdir: /opt/jetbrains
+  - name: Delete pycharm community destination
+    file:
+      state: absent
+      dest: /opt/jetbrains/{{ pycharm_dirname }}
+  - name: Extract pycharm community archive
+    unarchive:
+      src: /opt/jetbrains/{{ pycharm_archive_filename }}
+      dest: /opt/jetbrains
+  - name: Create /opt/jetbrains/pycharm-community link
+    file:
+      state: link
+      src: /opt/jetbrains/{{ pycharm_dirname }}
+      dest: /opt/jetbrains/pycharm-community
