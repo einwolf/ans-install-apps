@@ -1,5 +1,14 @@
 ---
 - hosts: all
+  become: False
+  gather_facts: False
+  tasks:
+  - name: Copy eclipse desktop file
+    copy:
+      src: dotlocal/share/applications/eclipse-2020-03R.desktop
+      dest: ~/.local/share/applications/
+      mode: 0664
+- hosts: all
   become: True
   vars:
     eclipse_archive_url: http://mirrors.ibiblio.org/eclipse/technology/epp/downloads/release/2020-03/R/eclipse-java-2020-03-R-linux-gtk-x86_64.tar.gz
