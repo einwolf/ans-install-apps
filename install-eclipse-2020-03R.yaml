@@ -1,0 +1,87 @@
+---
+- hosts: all
+  become: True
+  vars:
+    eclipse_archive_url: http://mirrors.ibiblio.org/eclipse/technology/epp/downloads/release/2020-03/R/eclipse-java-2020-03-R-linux-gtk-x86_64.tar.gz
+    eclipse_checksum_url: http://mirrors.ibiblio.org/eclipse/technology/epp/downloads/release/2020-03/R/eclipse-java-2020-03-R-linux-gtk-x86_64.tar.gz.sha512
+    eclipse_archive_filename: "{{ eclipse_archive_url | basename }}"
+    eclipse_checksum_filename: "{{ eclipse_checksum_url | basename }}"
+    eclipse_dirname: "{{ eclipse_archive_url | basename | regex_replace('\\.tar\\.gz') }}"
+  tasks:
+  - debug:
+      verbosity: 1
+      var: eclipse_archive_filename
+  - debug:
+      verbosity: 1
+      var: eclipse_checksum_filename
+  - debug:
+      verbosity: 1
+      var: eclipse_dirname
+  - name: Make eclipse opt directory
+    file:
+      state: directory
+      dest: /opt/eclipse-ide
+      owner: root
+      group: root
+      mode: 0775
+  - name: Check for eclipse java archive
+    stat:
+      path: /opt/eclipse-ide/{{ eclipse_archive_filename }}
+    register: eclipse_archive_stat
+  - debug:
+      verbosity: 1
+      var: eclipse_archive_stat
+  - name: Get eclipse archive
+    get_url:
+      http_agent: curl/7.37.0
+      url: "{{ eclipse_archive_url }}"
+      dest: /opt/eclipse-ide/
+      owner: root
+      group: root
+      mode: 0664
+    when: not eclipse_archive_stat.stat.exists
+  - name: Check for eclipse java checksum
+    stat:
+      path: /opt/eclipse-ide/{{ eclipse_checksum_filename }}
+    register: eclipse_checksum_stat
+  - debug:
+      verbosity: 1
+      var: eclipse_checksum_stat
+  - name: Get eclipse archive checksum
+    get_url:
+      http_agent: curl/7.37.0
+      url: "{{ eclipse_checksum_url }}"
+      dest: /opt/eclipse-ide/
+      owner: root
+      group: root
+      mode: 0664
+    when: not eclipse_checksum_stat.stat.exists
+  - name: Check eclipse archive checksum
+    command: sha512sum -c {{ eclipse_checksum_filename }}
+    args:
+      chdir: /opt/eclipse-ide
+  - name: Delete eclipse destination
+    file:
+      state: absent
+      dest: /opt/eclipse-ide/{{ eclipse_dirname }}
+  # - name: Extract eclipse archive
+  #   unarchive:
+  #     src: /opt/eclipse-ide/{{ eclipse_archive_filename }}
+  #     dest: /opt/eclipse-ide
+  - name: Make archive destination directory
+    file:
+      state: directory
+      dest: /opt/eclipse-ide/{{ eclipse_dirname }}
+      owner: root
+      group: root
+      mode: 0775
+  - name: Extract eclipse archive with tar
+    command: tar xzf {{ eclipse_archive_filename }} -C {{ eclipse_dirname }} --strip-components 1
+    args:
+      warn: False
+      chdir: /opt/eclipse-ide
+  - name: Create /opt/eclipse-ide/eclipse link
+    file:
+      state: link
+      src: /opt/eclipse-ide/{{ eclipse_dirname }}
+      dest: /opt/eclipse-ide/eclipse
